@@ -1,0 +1,124 @@
+name: Deploy Mycelium
+
+on:
+  push:
+    branches: [main]
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # ── Detect what changed ──────────────────────────────────────────────────
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      backend:  ${{ steps.filter.outputs.backend }}
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'backend/**'
+              - 'Dockerfile.backend'
+            frontend:
+              - 'frontend/**'
+              - 'Dockerfile.frontend'
+
+  # ── Backend ──────────────────────────────────────────────────────────────
+  deploy-backend:
+    needs: changes
+    if: ${{ needs.changes.outputs.backend == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.CR_PAT }}
+
+      - name: Build and push backend
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile.backend
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-backend:latest
+
+      - name: Deploy backend to VPS
+        uses: appleboy/ssh-action@v1
+        with:
+          host:     ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key:      ${{ secrets.VPS_KEY }}
+          port:     2222
+          script: |
+            docker pull ghcr.io/${{ github.repository }}-backend:latest
+            docker stop mycelium-backend 2>/dev/null || true
+            docker rm   mycelium-backend 2>/dev/null || true
+            docker run -d \
+              --name mycelium-backend \
+              --network proxy \
+              --expose 8000 \
+              --restart unless-stopped \
+              -v mycelium_data:/app/data \
+              -e MYCELIUM_API_KEY=${{ secrets.MYCELIUM_API_KEY }} \
+              ghcr.io/${{ github.repository }}-backend:latest
+            docker image prune -f
+
+  # ── Frontend ─────────────────────────────────────────────────────────────
+  deploy-frontend:
+    needs: changes
+    if: ${{ needs.changes.outputs.frontend == 'true' }}
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.CR_PAT }}
+
+      - name: Build and push frontend
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: Dockerfile.frontend
+          push: true
+          tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}-frontend:latest
+          build-args: |
+            VITE_API_URL=${{ secrets.VITE_API_URL }}
+            VITE_API_KEY=${{ secrets.MYCELIUM_API_KEY }}
+
+      - name: Deploy frontend to VPS
+        uses: appleboy/ssh-action@v1
+        with:
+          host:     ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key:      ${{ secrets.VPS_KEY }}
+          port:     2222
+          script: |
+            docker pull ghcr.io/${{ github.repository }}-frontend:latest
+            docker stop mycelium-frontend 2>/dev/null || true
+            docker rm   mycelium-frontend 2>/dev/null || true
+            docker run -d \
+              --name mycelium-frontend \
+              --network proxy \
+              --expose 3000 \
+              --restart unless-stopped \
+              ghcr.io/${{ github.repository }}-frontend:latest
+            docker image prune -f

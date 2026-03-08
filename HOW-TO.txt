@@ -1,0 +1,204 @@
+# Mycelium — Deploy Guide
+# Stack: GitHub Actions + GHCR + Nginx Proxy Manager + Docker
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ ARCHITECTURE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  You push to main
+     │
+  GitHub Actions
+     ├── builds backend image  → pushes to GHCR
+     ├── builds frontend image → pushes to GHCR
+     └── SSHs into VPS
+            └── docker pull + docker run
+
+  VPS has no source code. Just two running containers.
+  Same pattern as your portfolio.
+  Only changed service redeploys on each push.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ STEP 0 — Create GitHub repo
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  1. Go to github.com → New repository
+     Name: mycelium (or anything)
+     Visibility: Private recommended
+     Do NOT initialize with README
+
+  2. Extract the zip and enter the folder:
+       cd mycelium-kb
+
+  3. Init and push:
+       git init
+       git add .
+       git commit -m "init mycelium"
+       git branch -M main
+       git remote add origin https://github.com/ripisopol/mycelium.git
+       git push -u origin main
+
+  GitHub detects .github/workflows/deploy.yml automatically.
+  First push will fail until secrets are added — that's fine.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ STEP 1 — GitHub secrets
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Repo → Settings → Secrets and variables → Actions
+
+  Reuse from portfolio (already have these):
+
+    CR_PAT             GitHub personal access token (read/write packages)
+    VPS_HOST           your server IP or hostname
+    VPS_USER           ssh username
+    VPS_KEY            your private SSH key
+
+  Add two new ones for Mycelium:
+
+    MYCELIUM_API_KEY   your write password
+                       generate one: openssl rand -hex 32
+    VITE_API_URL       https://mycelium.yourdomain.com/api
+
+  Note: port 2222 is already set in the workflow — same as portfolio.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ STEP 2 — NPM setup (once)
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Access NPM via SSH tunnel (port 81 is firewalled):
+
+    ssh -L 8181:localhost:81 user@your-vps -p 2222
+
+  Open http://localhost:8181 in browser.
+
+  Proxy Hosts → Add Proxy Host:
+
+    Domain:           mycelium.yourdomain.com
+    Forward Hostname: localhost
+    Forward Port:     3000
+    SSL:              Request Let's Encrypt cert ✓
+
+  Advanced tab → Custom Nginx Config:
+
+    location /api/ {
+        proxy_pass http://localhost:8000/api/;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+    }
+
+  One proxy host, one domain, serves both frontend and API.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ STEP 3 — Deploy
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Add secrets first, then push to main:
+
+    git push origin main
+
+  GitHub Actions will:
+    1. Detect what changed (backend or frontend)
+    2. Build only that image
+    3. Push to GHCR
+    4. SSH into VPS, pull image, restart container
+
+  Watch live: GitHub repo → Actions tab.
+  First build ~3 min. After that faster.
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ STEP 4 — Verify
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Open https://mycelium.yourdomain.com
+  Should see the graph view (empty).
+
+  Test read (public):
+    curl https://mycelium.yourdomain.com/api/notes
+    → []
+
+  Test write:
+    curl -X POST https://mycelium.yourdomain.com/api/notes/ \
+      -H "Content-Type: application/json" \
+      -H "X-API-Key: your_secret" \
+      -d '{"title":"first note","content":"hello [[world]]"}'
+    → returns created note
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ DAY TO DAY
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Deploy:      git push origin main
+  Skip deploy: push to any branch other than main
+  Draft work:  git checkout -b drafts
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ LOCAL DEV
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Run locally to see changes instantly — no push needed.
+  Requires Python 3.12+ and Node 20+.
+
+  BACKEND
+  ───────
+  cd backend
+  pip install fastapi uvicorn nanoid        # first time only
+  MYCELIUM_API_KEY=devkey uvicorn main:app --reload --port 8000
+
+  --reload restarts automatically on every file save.
+  API:          http://localhost:8000
+  Swagger docs: http://localhost:8000/docs
+
+  FRONTEND
+  ────────
+  Open a second terminal:
+
+  cd frontend
+  npm install                               # first time only
+
+  Create frontend/.env.local:
+    VITE_API_URL=http://localhost:8000/api
+    VITE_API_KEY=devkey
+
+  npm run dev
+  → http://localhost:5173  (hot reloads on save)
+
+  WORKFLOW
+  ────────
+  1. Run backend in terminal 1
+  2. Run frontend in terminal 2
+  3. Edit → see changes instantly
+  4. Happy → git push origin main → deploys to VPS
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ BACKUP
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Data lives in a Docker named volume. Survives all redeploys.
+
+  Manual backup:
+    ssh user@your-vps -p 2222
+    cp /var/lib/docker/volumes/mycelium_data/_data/mycelium.db \
+       ~/mycelium-backup-$(date +%Y%m%d).db
+
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+ TROUBLESHOOTING
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+
+  Check logs (VPS or Portainer):
+    docker logs mycelium-backend
+    docker logs mycelium-frontend
+
+  Common issues:
+  - Workflow fails   → Actions tab on GitHub for error details
+  - 403 on write     → MYCELIUM_API_KEY secret wrong or missing
+  - API calls fail   → VITE_API_URL must end with /api
+  - Blank page       → frontend build error, check Actions logs

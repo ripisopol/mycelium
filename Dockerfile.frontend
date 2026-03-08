@@ -1,0 +1,22 @@
+FROM node:20-alpine AS builder
+
+WORKDIR /app
+COPY frontend/package.json .
+RUN npm install
+
+COPY frontend/ .
+
+# Bake in env vars at build time (Vite requirement)
+ARG VITE_API_URL
+ARG VITE_API_KEY
+ENV VITE_API_URL=$VITE_API_URL
+ENV VITE_API_KEY=$VITE_API_KEY
+
+RUN npm run build
+
+# Serve with lightweight static server — no nginx needed (NPM handles routing)
+FROM node:20-alpine
+RUN npm install -g serve
+COPY --from=builder /app/dist /app/dist
+EXPOSE 3000
+CMD ["serve", "-s", "/app/dist", "-l", "3000"]
