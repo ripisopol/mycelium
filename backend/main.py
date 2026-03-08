@@ -3,7 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from database import init_db
 from routers import notes, graph, search
 
-app = FastAPI(title="Mycelium", version="0.1.0")
+app = FastAPI(title="Mycelium", version="0.1.0", redirect_slashes=False)
 
 app.add_middleware(
     CORSMiddleware,
