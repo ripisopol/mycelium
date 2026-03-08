@@ -28,7 +28,7 @@ function WikiContent({ content, notes, onNavigate }) {
   );
 }
 
-export default function NoteView({ noteId, notes, onClose, onEdit, onNavigate }) {
+export default function NoteView({ noteId, notes, onClose, onEdit, onNavigate, onTagClick }) {
   const [note, setNote] = useState(null);
   const [backlinks, setBacklinks] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -39,7 +39,6 @@ export default function NoteView({ noteId, notes, onClose, onEdit, onNavigate })
     api.getNote(noteId).then((n) => {
       setNote(n);
       setLoading(false);
-      // Resolve backlink titles from the notes list
       const bls = (n.backlinks || [])
         .map((id) => notes.find((x) => x.id === id))
         .filter(Boolean);
@@ -84,7 +83,14 @@ export default function NoteView({ noteId, notes, onClose, onEdit, onNavigate })
             {note.tags?.length > 0 && (
               <div className="meta-row">
                 {note.tags.map((t) => (
-                  <span key={t} className="tag-pill">#{t}</span>
+                  <span
+                    key={t}
+                    className="tag-pill"
+                    onClick={() => onTagClick && onTagClick(t)}
+                    title={`Filter by #${t}`}
+                  >
+                    #{t}
+                  </span>
                 ))}
               </div>
             )}

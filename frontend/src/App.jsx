@@ -4,6 +4,9 @@ import NoteView from "./components/NoteView";
 import Editor   from "./components/Editor";
 import { api }  from "./api";
 
+// v4
+document.title = "mycelium.kb";
+
 // ── Styles ──────────────────────────────────────────────────────────────────
 const STYLES = `
   @import url('https://fonts.googleapis.com/css2?family=DM+Mono:ital,wght@0,300;0,400;0,500;1,300&family=Cormorant+Garamond:ital,wght@0,300;0,400;1,300;1,400&display=swap');
@@ -30,16 +33,13 @@ const STYLES = `
   html, body, #root { height: 100%; width: 100%; overflow: hidden; }
   body { background: var(--bg); color: var(--text); font-family: var(--font-body); font-size: 16px; line-height: 1.7; }
 
-  /* Shell */
   .shell { display: grid; grid-template-columns: 220px 1fr; grid-template-rows: 48px 1fr; height: 100vh; width: 100vw; }
 
-  /* Topbar */
   .topbar { grid-column: 1 / -1; display: flex; align-items: center; gap: 14px; padding: 0 18px; border-bottom: 1px solid var(--border); background: var(--bg); z-index: 10; }
   .topbar-logo { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.15em; color: var(--accent); }
   .topbar-logo span { color: var(--muted); }
   .topbar-actions { margin-left: auto; display: flex; gap: 8px; align-items: center; }
 
-  /* Search */
   .search-wrap { flex: 1; max-width: 340px; position: relative; }
   .search-input { width: 100%; background: var(--bg2); border: 1px solid var(--border); border-radius: 3px; padding: 5px 10px 5px 26px; font-family: var(--font-mono); font-size: 11px; color: var(--text); outline: none; transition: border-color 0.2s; }
   .search-input:focus { border-color: var(--muted); }
@@ -52,7 +52,6 @@ const STYLES = `
   .search-result-excerpt { font-family: var(--font-mono); font-size: 10px; color: var(--text2); margin-top: 2px; }
   .search-result-excerpt mark { background: none; color: var(--accent); font-style: normal; }
 
-  /* Sidebar */
   .sidebar { border-right: 1px solid var(--border); background: var(--bg); overflow-y: auto; padding: 10px 0; }
   .sidebar::-webkit-scrollbar { width: 3px; }
   .sidebar::-webkit-scrollbar-thumb { background: var(--border); }
@@ -64,16 +63,21 @@ const STYLES = `
   .sidebar-dot { width: 4px; height: 4px; border-radius: 50%; background: var(--muted); flex-shrink: 0; }
   .sidebar-item.active .sidebar-dot { background: var(--accent); }
 
-  /* Main */
+  .tag-filter-item { display: flex; align-items: center; justify-content: space-between; padding: 4px 8px; border-radius: 3px; cursor: pointer; font-family: var(--font-mono); font-size: 10px; color: var(--text2); transition: all 0.12s; border: none; background: none; width: 100%; text-align: left; }
+  .tag-filter-item:hover { background: var(--bg3); color: var(--moss); }
+  .tag-filter-item.active { background: var(--bg3); color: var(--moss); }
+  .tag-filter-count { font-size: 9px; color: var(--muted); }
+  .tag-filter-active-bar { display: flex; align-items: center; justify-content: space-between; padding: 4px 8px; font-family: var(--font-mono); font-size: 9px; color: var(--moss); }
+  .tag-clear-btn { background: none; border: none; color: var(--muted); cursor: pointer; font-size: 10px; padding: 0; }
+  .tag-clear-btn:hover { color: var(--danger); }
+
   .main { position: relative; overflow: hidden; background: var(--bg); }
 
-  /* Graph */
   .graph-container { width: 100%; height: 100%; position: relative; }
   .graph-svg { width: 100%; height: 100%; cursor: grab; display: block; }
   .graph-svg:active { cursor: grabbing; }
   .graph-hint { position: absolute; bottom: 14px; left: 14px; font-family: var(--font-mono); font-size: 10px; color: var(--muted); pointer-events: none; }
 
-  /* Panel */
   .panel { position: absolute; top: 0; right: 0; width: 460px; height: 100%; background: var(--bg); border-left: 1px solid var(--border); display: flex; flex-direction: column; transform: translateX(100%); transition: transform 0.25s cubic-bezier(0.16,1,0.3,1); z-index: 20; }
   .panel.open { transform: translateX(0); }
   .panel-loading { padding: 24px; font-family: var(--font-mono); font-size: 11px; color: var(--muted); }
@@ -86,20 +90,19 @@ const STYLES = `
   .panel-body::-webkit-scrollbar { width: 3px; }
   .panel-body::-webkit-scrollbar-thumb { background: var(--border); }
 
-  /* Note content */
   .note-content { font-family: var(--font-body); font-size: 16px; line-height: 1.85; color: var(--text); white-space: pre-wrap; word-break: break-word; }
   .wiki-link { color: var(--accent); cursor: pointer; border-bottom: 1px solid transparent; transition: border-color 0.12s; }
   .wiki-link:hover { border-bottom-color: var(--accent); }
   .timestamp { font-family: var(--font-mono); font-size: 10px; color: var(--muted); margin-bottom: 12px; }
   .meta-row { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 14px; }
-  .tag-pill { font-family: var(--font-mono); font-size: 10px; padding: 2px 8px; border-radius: 20px; background: var(--bg3); border: 1px solid var(--border); color: var(--moss); }
+  .tag-pill { font-family: var(--font-mono); font-size: 10px; padding: 2px 8px; border-radius: 20px; background: var(--bg3); border: 1px solid var(--border); color: var(--moss); cursor: pointer; transition: all 0.12s; }
+  .tag-pill:hover { border-color: var(--moss); background: var(--bg2); }
   .backlinks-section { margin-top: 28px; }
   .section-heading { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.2em; color: var(--muted); text-transform: uppercase; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid var(--border); }
   .backlink-item { display: flex; align-items: center; gap: 8px; padding: 5px 0; cursor: pointer; font-family: var(--font-mono); font-size: 11px; color: var(--text2); border: none; background: none; width: 100%; text-align: left; transition: color 0.12s; }
   .backlink-item:hover { color: var(--accent); }
   .orphan-note { margin-top: 28px; font-family: var(--font-mono); font-size: 10px; color: var(--muted); font-style: italic; }
 
-  /* Editor */
   .editor-wrap { display: flex; flex-direction: column; height: 100%; padding: 20px; gap: 10px; }
   .editor-topbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 2px; }
   .editor-mode-label { font-family: var(--font-mono); font-size: 9px; letter-spacing: 0.2em; color: var(--muted); text-transform: uppercase; }
@@ -114,14 +117,12 @@ const STYLES = `
   .editor-error { font-family: var(--font-mono); font-size: 11px; color: var(--danger); padding: 6px 0; }
   .editor-actions { display: flex; gap: 8px; justify-content: flex-end; padding-top: 4px; }
 
-  /* Wiki autocomplete */
   .wiki-suggestions { position: absolute; bottom: calc(100% + 4px); left: 0; right: 0; background: var(--bg2); border: 1px solid var(--border); border-radius: 3px; z-index: 50; overflow: hidden; }
   .wiki-suggestion-item { display: flex; align-items: center; gap: 8px; padding: 7px 12px; cursor: pointer; font-family: var(--font-mono); font-size: 11px; color: var(--text2); transition: background 0.1s; }
   .wiki-suggestion-item:hover { background: var(--bg3); color: var(--accent); }
   .wiki-suggestion-icon { font-size: 9px; color: var(--muted); }
   .wiki-suggestion-hint { padding: 4px 12px; font-family: var(--font-mono); font-size: 9px; color: var(--muted); border-top: 1px solid var(--border); }
 
-  /* Buttons */
   .btn { font-family: var(--font-mono); font-size: 11px; padding: 6px 14px; border-radius: 3px; border: 1px solid var(--border); cursor: pointer; transition: all 0.12s; letter-spacing: 0.04em; }
   .btn-ghost { background: none; color: var(--text2); }
   .btn-ghost:hover { border-color: var(--muted); color: var(--text); }
@@ -133,13 +134,11 @@ const STYLES = `
   .btn-icon { background: none; border: 1px solid var(--border); color: var(--text2); padding: 4px 9px; border-radius: 3px; cursor: pointer; font-size: 13px; transition: all 0.12s; }
   .btn-icon:hover { border-color: var(--muted); color: var(--text); }
 
-  /* View toggle */
   .view-toggle { display: flex; border: 1px solid var(--border); border-radius: 3px; overflow: hidden; }
   .view-toggle-btn { background: none; border: none; padding: 4px 10px; font-family: var(--font-mono); font-size: 10px; color: var(--muted); cursor: pointer; transition: all 0.12s; letter-spacing: 0.04em; }
   .view-toggle-btn.active { background: var(--bg3); color: var(--accent); }
   .view-toggle-btn:hover:not(.active) { color: var(--text); }
 
-  /* List view */
   .list-view { padding: 22px; overflow-y: auto; height: 100%; }
   .list-view::-webkit-scrollbar { width: 3px; }
   .list-view::-webkit-scrollbar-thumb { background: var(--border); }
@@ -149,7 +148,6 @@ const STYLES = `
   .list-note-title { font-family: var(--font-mono); font-size: 12px; color: var(--text); margin-bottom: 3px; transition: color 0.12s; }
   .list-note-meta { font-family: var(--font-mono); font-size: 10px; color: var(--muted); }
 
-  /* Empty state */
   .empty-state { position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 8px; pointer-events: none; }
   .empty-glyph { font-size: 44px; opacity: 0.07; font-family: var(--font-mono); }
   .empty-text { font-family: var(--font-mono); font-size: 11px; color: var(--muted); letter-spacing: 0.1em; }
@@ -223,22 +221,26 @@ function ListView({ notes, activeId, onSelect }) {
 
 // ── App ─────────────────────────────────────────────────────────────────────
 export default function App() {
-  const [notes,    setNotes]    = useState([]);
-  const [graph,    setGraph]    = useState(null);
-  const [activeId, setActiveId] = useState(null);
-  const [view,     setView]     = useState("graph"); // "graph" | "list"
-  const [mode,     setMode]     = useState("view");  // "view" | "edit" | "new"
-  const [editNote, setEditNote] = useState(null);
+  const [notes,     setNotes]     = useState([]);
+  const [graph,     setGraph]     = useState(null);
+  const [activeId,  setActiveId]  = useState(null);
+  const [view,      setView]      = useState("graph");
+  const [mode,      setMode]      = useState("view");
+  const [editNote,  setEditNote]  = useState(null);
+  const [tags,      setTags]      = useState([]);
+  const [activeTag, setActiveTag] = useState(null);
+  const [tagNotes,  setTagNotes]  = useState(null);
 
   const reload = useCallback(async () => {
-    const [n, g] = await Promise.all([api.listNotes(), api.getGraph()]);
+    const [n, g, t] = await Promise.all([api.listNotes(), api.getGraph(), api.listTags()]);
     setNotes(n);
     setGraph(g);
+    setTags(t);
   }, []);
 
   useEffect(() => { reload(); }, [reload]);
 
-  const openNote = (id) => { setActiveId(id); setMode("view"); };
+  const openNote   = (id)    => { setActiveId(id); setMode("view"); };
   const openEditor = (note = null) => { setEditNote(note); setMode(note ? "edit" : "new"); };
 
   const handleSave = () => {
@@ -254,6 +256,24 @@ export default function App() {
     reload();
   };
 
+  const handleTagClick = async (tagName) => {
+    if (activeTag === tagName) {
+      setActiveTag(null);
+      setTagNotes(null);
+      return;
+    }
+    setActiveTag(tagName);
+    setView("list");
+    const results = await api.notesByTag(tagName);
+    setTagNotes(results);
+  };
+
+  const clearTagFilter = () => {
+    setActiveTag(null);
+    setTagNotes(null);
+  };
+
+  const displayedNotes = activeTag && tagNotes ? tagNotes : notes;
   const isEditing = mode === "edit" || mode === "new";
 
   return (
@@ -278,9 +298,18 @@ export default function App() {
 
         {/* Sidebar */}
         <aside className="sidebar">
+          {activeTag && (
+            <div className="sidebar-section">
+              <div className="tag-filter-active-bar">
+                <span>#{activeTag}</span>
+                <button className="tag-clear-btn" onClick={clearTagFilter}>✕</button>
+              </div>
+            </div>
+          )}
+
           <div className="sidebar-section">
             <div className="sidebar-label">recent</div>
-            {notes.slice(0, 15).map(n => (
+            {notes.slice(0, 10).map(n => (
               <button key={n.id}
                 className={`sidebar-item ${n.id === activeId ? "active" : ""}`}
                 onClick={() => openNote(n.id)}>
@@ -289,6 +318,20 @@ export default function App() {
               </button>
             ))}
           </div>
+
+          {tags.length > 0 && (
+            <div className="sidebar-section">
+              <div className="sidebar-label">tags</div>
+              {tags.map(t => (
+                <button key={t.name}
+                  className={`tag-filter-item ${activeTag === t.name ? "active" : ""}`}
+                  onClick={() => handleTagClick(t.name)}>
+                  <span>#{t.name}</span>
+                  <span className="tag-filter-count">{t.count}</span>
+                </button>
+              ))}
+            </div>
+          )}
         </aside>
 
         {/* Main */}
@@ -310,17 +353,19 @@ export default function App() {
                 onClose={() => setActiveId(null)}
                 onEdit={openEditor}
                 onNavigate={openNote}
+                onTagClick={handleTagClick}
               />
             </>
           ) : (
             <>
-              <ListView notes={notes} activeId={activeId} onSelect={openNote} />
+              <ListView notes={displayedNotes} activeId={activeId} onSelect={openNote} />
               <NoteView
                 noteId={activeId}
                 notes={notes}
                 onClose={() => setActiveId(null)}
                 onEdit={openEditor}
                 onNavigate={openNote}
+                onTagClick={handleTagClick}
               />
             </>
           )}
