@@ -5,9 +5,9 @@ DB_PATH = Path("data/mycelium.db")
 
 def get_db():
     db = sqlite3.connect(DB_PATH, check_same_thread=False)
-    db.row_factory = sqlite3.Row  # rows as dicts
+    db.row_factory = sqlite3.Row
     db.execute("PRAGMA foreign_keys = ON")
-    db.execute("PRAGMA journal_mode = WAL")  # concurrent reads
+    db.execute("PRAGMA journal_mode = WAL")
     try:
         yield db
     finally:
@@ -24,6 +24,14 @@ def init_db():
             created_at DATETIME DEFAULT (datetime('now')),
             updated_at DATETIME DEFAULT (datetime('now')),
             is_public  INTEGER NOT NULL DEFAULT 1
+        );
+
+        CREATE TABLE IF NOT EXISTS note_versions (
+            id         INTEGER PRIMARY KEY AUTOINCREMENT,
+            note_id    TEXT NOT NULL REFERENCES notes(id) ON DELETE CASCADE,
+            title      TEXT NOT NULL,
+            content    TEXT NOT NULL,
+            saved_at   DATETIME DEFAULT (datetime('now'))
         );
 
         CREATE TABLE IF NOT EXISTS links (
@@ -49,9 +57,10 @@ def init_db():
             PRIMARY KEY (source_id, target_title)
         );
 
-        CREATE INDEX IF NOT EXISTS idx_links_target  ON links(target_id);
-        CREATE INDEX IF NOT EXISTS idx_notes_updated ON notes(updated_at);
-        CREATE INDEX IF NOT EXISTS idx_note_tags_tag ON note_tags(tag_id);
+        CREATE INDEX IF NOT EXISTS idx_links_target    ON links(target_id);
+        CREATE INDEX IF NOT EXISTS idx_notes_updated   ON notes(updated_at);
+        CREATE INDEX IF NOT EXISTS idx_note_tags_tag   ON note_tags(tag_id);
+        CREATE INDEX IF NOT EXISTS idx_versions_note   ON note_versions(note_id);
 
         CREATE VIRTUAL TABLE IF NOT EXISTS notes_fts
             USING fts5(title, content, content='notes', content_rowid='rowid');

@@ -19,13 +19,15 @@ async function req(method, path, body) {
 }
 
 export const api = {
-  listNotes:    ()         => req("GET",    "/notes"),
-  getNote:      (id)       => req("GET",    `/notes/${id}`),
-  createNote:   (body)     => req("POST",   "/notes/", body),
-  updateNote:   (id, body) => req("PUT",    `/notes/${id}`, body),
-  deleteNote:   (id)       => req("DELETE", `/notes/${id}`),
-  getGraph:     ()         => req("GET",    "/graph"),
-  search:       (q)        => req("GET",    `/search?q=${encodeURIComponent(q)}`),
-  listTags:     ()         => req("GET",    "/search/tags"),
-  notesByTag:   (tag)      => req("GET",    `/search/by-tag?tag=${encodeURIComponent(tag)}`),
+  listNotes:    ()             => req("GET",    "/notes"),
+  getNote:      (id)           => req("GET",    `/notes/${id}`),
+  createNote:   (body)         => req("POST",   "/notes/", body),
+  updateNote:   (id, body)     => req("PUT",    `/notes/${id}`, body),
+  deleteNote:   (id)           => req("DELETE", `/notes/${id}`),
+  getGraph:     ()             => req("GET",    "/graph"),
+  search:       (q)            => req("GET",    `/search?q=${encodeURIComponent(q)}`),
+  listTags:     ()             => req("GET",    "/search/tags"),
+  notesByTag:   (tag)          => req("GET",    `/search/by-tag?tag=${encodeURIComponent(tag)}`),
+  listVersions: (id)           => req("GET",    `/notes/${id}/versions`),
+  restoreVersion: (id, ver_id) => req("POST",   `/notes/${id}/versions/${ver_id}/restore`),
 };
