@@ -4,6 +4,7 @@ from sqlite3 import Connection
 
 router = APIRouter()
 
+@router.get("")
 @router.get("/")
 def search(q: str = Query(..., min_length=1), db: Connection = Depends(get_db)):
     rows = db.execute("""
