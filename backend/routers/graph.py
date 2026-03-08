@@ -4,6 +4,7 @@ from sqlite3 import Connection
 
 router = APIRouter()
 
+@router.get("")
 @router.get("/")
 def get_graph(db: Connection = Depends(get_db)):
     nodes = db.execute("""

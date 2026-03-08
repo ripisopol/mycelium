@@ -7,11 +7,11 @@ app = FastAPI(title="Mycelium", version="0.1.0", redirect_slashes=False)
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],   # tighten in prod
+    allow_origins=["*"],
     allow_methods=["*"],
     allow_headers=["*"],
 )
-# Initialize the database on startup
+
 @app.on_event("startup")
 def startup():
     init_db()
