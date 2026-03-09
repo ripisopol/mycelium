@@ -34,7 +34,7 @@ const STYLES = `
   body { background: var(--bg); color: var(--text); font-family: var(--font-body); font-size: 16px; line-height: 1.7; }
 
   /* ── Desktop shell ── */
-  .shell { display: grid; grid-template-columns: 220px 1fr; grid-template-rows: 48px 1fr; height: 100vh; width: 100vw; overflow: hidden; }
+  .shell { display: grid; grid-template-columns: 220px 1fr; grid-template-rows: 48px 1fr; height: 100vh; height: 100dvh; width: 100vw; overflow: hidden; }
   .topbar { grid-column: 1 / -1; grid-row: 1; }
   .sidebar { grid-column: 1; grid-row: 2; }
   .main { grid-column: 2; grid-row: 2; overflow: hidden; }
@@ -192,7 +192,7 @@ const STYLES = `
 
     .shell {
       grid-template-columns: 1fr;
-      grid-template-rows: 48px 1fr 56px;
+      grid-template-rows: 48px 1fr calc(56px + env(safe-area-inset-bottom));
       height: 100vh;
       overflow: hidden;
     }
@@ -248,9 +248,11 @@ const STYLES = `
       justify-content: space-around;
       border-top: 1px solid var(--border);
       background: var(--bg);
-      height: 56px;
+      height: calc(56px + env(safe-area-inset-bottom));
+      padding-bottom: env(safe-area-inset-bottom);
       z-index: 10;
       grid-column: 1;
+      grid-row: 3;
     }
     .bottom-nav-btn {
       flex: 1;
