@@ -27,7 +27,7 @@ const STYLES = `
     --glow:      rgba(94,203,161,0.15);
     --font-mono: 'DM Mono', monospace;
     --font-body: 'Cormorant Garamond', serif;
-    --bottom-nav-h: 0px;
+
   }
 
   html, body, #root { height: 100%; width: 100%; overflow: hidden; }
@@ -185,11 +185,11 @@ const STYLES = `
 
   /* ── Mobile ── */
   @media (max-width: 640px) {
-    :root { --bottom-nav-h: 56px; }
+    
 
     .shell {
       grid-template-columns: 1fr;
-      grid-template-rows: 48px 1fr var(--bottom-nav-h);
+      grid-template-rows: 48px 1fr 56px;
     }
 
     .menu-btn { display: block; }
@@ -205,7 +205,7 @@ const STYLES = `
       left: 0;
       width: 80vw;
       max-width: 280px;
-      height: calc(100vh - 48px - var(--bottom-nav-h));
+      height: calc(100vh - 48px - 56px);
       z-index: 100;
       transform: translateX(-100%);
       transition: transform 0.25s cubic-bezier(0.16,1,0.3,1);
@@ -239,7 +239,7 @@ const STYLES = `
       justify-content: space-around;
       border-top: 1px solid var(--border);
       background: var(--bg);
-      height: var(--bottom-nav-h);
+      height: 56px;
       z-index: 10;
       grid-column: 1;
     }
@@ -265,7 +265,7 @@ const STYLES = `
     .bottom-nav-btn-icon { font-size: 18px; line-height: 1; }
 
     /* Editor full screen on mobile */
-    .editor-wrap { padding: 14px; padding-bottom: calc(14px + var(--bottom-nav-h)); }
+    .editor-wrap { padding: 14px; padding-bottom: 70px; }
 
     /* Search takes more space on mobile */
     .search-wrap { max-width: none; flex: 1; }
@@ -406,6 +406,10 @@ export default function App() {
     setActiveId(id);
     setMode("view");
     setSidebarOpen(false);
+    // On mobile, switch to list view so the panel has something behind it
+    if (window.innerWidth <= 640 && view === "graph") {
+      setView("list");
+    }
   };
 
   const openEditor = (note = null) => {
@@ -450,13 +454,11 @@ export default function App() {
   return (
     <>
       <style>{STYLES}</style>
-      <div className="shell">
-
-        {/* Sidebar overlay (mobile) */}
-        <div
+      <div
           className={`sidebar-overlay ${sidebarOpen ? "visible" : ""}`}
           onClick={() => setSidebarOpen(false)}
         />
+      <div className="shell">
 
         {/* Topbar */}
         <header className="topbar">
@@ -548,7 +550,6 @@ export default function App() {
             new
           </button>
         </nav>
-
       </div>
     </>
   );
