@@ -34,7 +34,10 @@ const STYLES = `
   body { background: var(--bg); color: var(--text); font-family: var(--font-body); font-size: 16px; line-height: 1.7; }
 
   /* ── Desktop shell ── */
-  .shell { display: grid; grid-template-columns: 220px 1fr; grid-template-rows: 48px 1fr; height: 100vh; width: 100vw; }
+  .shell { display: grid; grid-template-columns: 220px 1fr; grid-template-rows: 48px 1fr; height: 100vh; width: 100vw; overflow: hidden; }
+  .topbar { grid-column: 1 / -1; grid-row: 1; }
+  .sidebar { grid-column: 1; grid-row: 2; }
+  .main { grid-column: 2; grid-row: 2; overflow: hidden; }
 
   .topbar { grid-column: 1 / -1; display: flex; align-items: center; gap: 14px; padding: 0 18px; border-bottom: 1px solid var(--border); background: var(--bg); z-index: 10; }
   .topbar-logo { font-family: var(--font-mono); font-size: 12px; letter-spacing: 0.15em; color: var(--accent); cursor: pointer; }
@@ -190,7 +193,13 @@ const STYLES = `
     .shell {
       grid-template-columns: 1fr;
       grid-template-rows: 48px 1fr 56px;
+      height: 100vh;
+      overflow: hidden;
     }
+
+    .topbar { grid-column: 1; grid-row: 1; }
+    .main { grid-column: 1; grid-row: 2; overflow: hidden; }
+    .bottom-nav { grid-column: 1; grid-row: 3; }
 
     .menu-btn { display: block; }
 
@@ -207,11 +216,11 @@ const STYLES = `
       max-width: 280px;
       height: calc(100vh - 48px - 56px);
       z-index: 100;
-      transform: translateX(-100%);
+      display: none;
       transition: transform 0.25s cubic-bezier(0.16,1,0.3,1);
       border-right: 1px solid var(--border);
     }
-    .sidebar.open { transform: translateX(0); }
+    .sidebar.open { display: block; }
 
     /* Overlay behind sidebar */
     .sidebar-overlay {
@@ -550,6 +559,7 @@ export default function App() {
             new
           </button>
         </nav>
+
       </div>
     </>
   );
