@@ -192,7 +192,7 @@ const STYLES = `
 
     .shell {
       grid-template-columns: 1fr;
-      grid-template-rows: 48px 1fr calc(56px + env(safe-area-inset-bottom));
+      grid-template-rows: 48px 1fr;
       height: 100vh;
       overflow: hidden;
     }
@@ -203,9 +203,9 @@ const STYLES = `
 
     .menu-btn { display: block; }
 
-    /* Hide view toggle and new button from topbar on mobile */
-    .topbar-actions .view-toggle { display: none; }
-    .topbar-actions .btn-primary { display: none; }
+    /* Compact topbar actions on mobile */
+    .topbar-actions .view-toggle-btn { padding: 4px 7px; font-size: 9px; }
+    .topbar-actions .btn-primary { padding: 4px 8px; font-size: 10px; }
 
     /* Sidebar becomes a drawer */
     .sidebar {
@@ -241,42 +241,10 @@ const STYLES = `
     /* Panel becomes full screen */
     .panel { width: 100%; border-left: none; }
 
-    /* Bottom nav bar */
-    .bottom-nav {
-      display: flex;
-      align-items: center;
-      justify-content: space-around;
-      border-top: 1px solid var(--border);
-      background: var(--bg);
-      height: calc(56px + env(safe-area-inset-bottom));
-      padding-bottom: env(safe-area-inset-bottom);
-      z-index: 10;
-      grid-column: 1;
-      grid-row: 3;
-    }
-    .bottom-nav-btn {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 3px;
-      background: none;
-      border: none;
-      color: var(--muted);
-      font-family: var(--font-mono);
-      font-size: 9px;
-      letter-spacing: 0.08em;
-      cursor: pointer;
-      padding: 8px 0;
-      transition: color 0.12s;
-      height: 100%;
-    }
-    .bottom-nav-btn.active { color: var(--accent); }
-    .bottom-nav-btn-icon { font-size: 18px; line-height: 1; }
+
 
     /* Editor full screen on mobile */
-    .editor-wrap { padding: 14px; padding-bottom: 70px; }
+    .editor-wrap { padding: 14px; }
 
     /* Search takes more space on mobile */
     .search-wrap { max-width: none; flex: 1; }
@@ -540,27 +508,7 @@ export default function App() {
           )}
         </main>
 
-        {/* Bottom nav (mobile only) */}
-        <nav className="bottom-nav">
-          <button
-            className={`bottom-nav-btn ${view === "graph" && !isEditing ? "active" : ""}`}
-            onClick={() => { setView("graph"); setMode("view"); }}>
-            <span className="bottom-nav-btn-icon">⬡</span>
-            graph
-          </button>
-          <button
-            className={`bottom-nav-btn ${view === "list" && !isEditing ? "active" : ""}`}
-            onClick={() => { setView("list"); setMode("view"); }}>
-            <span className="bottom-nav-btn-icon">≡</span>
-            list
-          </button>
-          <button
-            className={`bottom-nav-btn ${isEditing && mode === "new" ? "active" : ""}`}
-            onClick={() => openEditor()}>
-            <span className="bottom-nav-btn-icon">+</span>
-            new
-          </button>
-        </nav>
+
 
       </div>
     </>
